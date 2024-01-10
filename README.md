@@ -62,6 +62,22 @@ The Sidecar uses the following environment variables to configure itself:
 | CNS_CONTEXT      | CNS Dapr context                 | Must be set            |
 | CNS_TOKEN        | CNS Dapr token                   | Must be set            |
 
+#### Linux
+
+| Command                              | Description                           |
+|--------------------------------------|---------------------------------------|
+| env                                  | List all variables                    |
+| export [name]=[value]                | Set variable                          |
+| unset [name]                         | Remove variable                       |
+
+#### Windows
+
+| Command                              | Description                           |
+|--------------------------------------|---------------------------------------|
+| set                                  | List all variables                    |
+| set [name]=[value]                   | Set variable                          |
+| set [name]=                          | Remove variable                       |
+
 #### Broker Service
 
 The Sidecar communicates to the CNS Broker via the service specified in `CNS_BROKER`.
