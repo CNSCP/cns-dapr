@@ -77,7 +77,7 @@ async function getProfile(query) {
 async function getNode(query) {
   try {
     // Locate query
-    const keys = getKeys(query);
+    const keys = getNodeKeys(query);
     const loc = objects.locate(keys, cache);
 
     if (loc === null)
@@ -97,7 +97,7 @@ async function getNode(query) {
 async function postNode(query, data) {
   try {
     // Locate query
-    const keys = getKeys(query);
+    const keys = getNodeKeys(query);
     const loc = objects.locate(keys, cache);
 
     if (loc === null)
@@ -193,6 +193,13 @@ function getKeys(query) {
 
   if (query.startsWith('/'))
     keys.shift();
+
+  return keys;
+}
+
+// Split node query into keys
+function getNodeKeys(query) {
+  const keys = getKeys(query);
 
   if (keys[0] !== CNS_CONTEXT)
     throw new Error('wrong context');
