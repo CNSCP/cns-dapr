@@ -37,4 +37,4 @@ substitutions:
   _ARTIFACT_REGISTRY_REPO: public
   _TAG: latest
   _GCR_PROJ: padi-staging
-  _APP_NAME: padi-web
+  _APP_NAME: cns-dapr
