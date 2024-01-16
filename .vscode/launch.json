@@ -5,11 +5,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "command": "npm run start",
-      "name": "NPM Start",
+      "command": "npm run start:dapr",
+      "name": "NPM Start (Local)",
       "request": "launch",
       "type": "node-terminal",
-      "envFile": "${workspaceFolder}/.env.staging"
+      "envFile": "${workspaceFolder}/.env.local"
   }
   ]
 }
