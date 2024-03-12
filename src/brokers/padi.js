@@ -12,27 +12,6 @@ const objects = require('../objects.js');
 
 // Constants
 
-// Running production:
-//
-// export CNS_PADI_CP=https://cp.padi.io
-// export CNS_PADI_API=https://api.padi.io
-// export CNS_PADI_MQTT=wss://cns.padi.io:1881
-//
-// Running staging:
-//
-// export CNS_PADI_CP=https://cp.staging.padi.io
-// export CNS_PADI_API=https://api.staging.padi.io
-// export CNS_PADI_MQTT=wss://cns.staging.padi.io:1881
-//
-// Running localhost:
-//
-// export CNS_PADI_CP=http://localhost:8083
-// export CNS_PADI_API=http://localhost:8081
-// export CNS_PADI_MQTT=ws://localhost:1881
-//
-// export CNS_CONTEXT=vUEFncafIxjGHgoIvwtB
-// export CNS_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJwYWRpLWFwcCIsImlzcyI6IllRM0pCTnR1Wm9qeXdrU0VhUEhNIiwic3ViIjoidlVFRm5jYWZJeGpHSGdvSXZ3dEIiLCJpYXQiOjE2OTQwODQ3NjZ9.VLDDyCF6JoW35pXgGohQv2l_rHdQVREUWDykLiDsV0o
-
 const PADI_CP = process.env.CNS_PADI_CP || 'https://cp.padi.io';
 const PADI_API = process.env.CNS_PADI_API || 'https://api.padi.io';
 const PADI_MQTT = process.env.CNS_PADI_MQTT || 'wss://cns.padi.io:1881';
