@@ -112,9 +112,6 @@ async function postNode(query, data) {
     const obj1 = objects.isObject(data1);
     const obj2 = objects.isObject(data2);
 
-//    if (obj1 !== obj2)
-//      throw new Error('type missmatch');
-
     loc.obj[loc.key] = (obj1 && obj2)?objects.merge(data1, data2):data2;
 
     // Publish differences
@@ -215,7 +212,7 @@ function getData(data) {
   catch(e) {return data;}
 }
 
-// Server application
+// Start application
 async function start() {
   // Ask broker for node
   await broker.start({
