@@ -1,20 +1,19 @@
 {
   "name": "cns-dapr",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Dapr CNS Server",
   "author": "Padi, Inc",
   "license": "ISC",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "dapr run --app-id cns-dapr --app-port 3000 --app-protocol http --dapr-http-port 3500 --resources-path components --log-level error -- node index",
     "stop": "dapr stop --app-id cns-dapr",
-    "start:dapr": "dapr run --app-id cns-dapr --app-port 3000 --app-protocol http --dapr-http-port 3500 --resources-path components -- node index",
-    "stop:dapr": "npm run stop",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@dapr/dapr": "^3.1.2",
     "axios": "^1.5.0",
+    "dotenv": "^16.4.5",
     "mqtt": "^4.2.8"
   }
 }

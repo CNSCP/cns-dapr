@@ -53,30 +53,17 @@ The Sidecar uses the following environment variables to configure itself:
 
 | Name             | Description                      | Default                |
 |------------------|----------------------------------|------------------------|
-| CNS_SERVER_HOST  | CNS Dapr server host             | 'localhost'            |
-| CNS_SERVER_PORT  | CNS Dapr server port             | '3000'                 |
-| CNS_DAPR_HOST    | Dapr host                        | 'localhost'            |
-| CNS_DAPR_PORT    | Dapr port                        | '3500'                 |
-| CNS_PUBSUB       | CNS Dapr PUBSUB component ID     | 'cns-pubsub'           |
 | CNS_BROKER       | CNS Broker service               | 'padi'                 |
-| CNS_CONTEXT      | CNS Dapr context                 | Must be set            |
-| CNS_TOKEN        | CNS Dapr token                   | Must be set            |
+| CNS_CONTEXT      | CNS Broker context               | Must be set            |
+| CNS_TOKEN        | CNS Broker token                 | Must be set            |
+| CNS_DAPR         | CNS Dapr application             | 'cns-dapr'             |
+| CNS_DAPR_HOST    | CNS Dapr host                    | 'localhost'            |
+| CNS_DAPR_PORT    | CNS Dapr port                    | '3500'                 |
+| CNS_PUBSUB       | CNS Dapr PUBSUB component        | 'cns-pubsub'           |
+| CNS_SERVER_HOST  | Dapr server host                 | 'localhost'            |
+| CNS_SERVER_PORT  | Dapr server port                 | '3000'                 |
 
-#### Linux
-
-| Command                              | Description                           |
-|--------------------------------------|---------------------------------------|
-| env                                  | List all variables                    |
-| export [name]=[value]                | Set variable                          |
-| unset [name]                         | Remove variable                       |
-
-#### Windows
-
-| Command                              | Description                           |
-|--------------------------------------|---------------------------------------|
-| set                                  | List all variables                    |
-| set [name]=[value]                   | Set variable                          |
-| set [name]=                          | Remove variable                       |
+Alternatively, variables can be stored in a `.env` file in the project directory.
 
 #### Broker Service
 
@@ -102,56 +89,53 @@ The Padi CNS Broker service uses the following environment variables:
 
 A [Dapr SDK](https://docs.dapr.io/developing-applications/sdks/) exists that puts a wrapper around the functionality described below and is implemented for various languages.
 
+### Object Hierarchy
+
+
 ### Invocation Reference
 
-Dapr provides the ability to call other applications that use Dapr with a unique named identifier. The identifier for the CNS Dapr Sidecar is `cns-dapr`. The following HTTP endpoint lets you invoke a method on the Sidecar:
+Dapr provides the ability to call other applications that use Dapr with a unique named identifier. The identifier for CNS Dapr is defined in the `CNS_DAPR` environment variable. The following HTTP endpoint lets you invoke a method on the CNS Dapr application:
 
-`GET|POST|PUT|DELETE http://localhost:<daprPort>/v1.0/invoke/cns-dapr/method/<method>`
+`GET|POST http://<CNS_DAPR_HOST>:<CNS_DAPR_PORT>/v1.0/invoke/<CNS_DAPR>/method/<path>`
 
 Where the HTTP method will:
 
 | HTTP Method      | Description                                               |
 |------------------|-----------------------------------------------------------|
-| GET              | Read data from the endpoint                               |
-| POST             | Write data to the endpoint                                |
-| PUT              | NYI                                                       |
-| DELETE           | NYI                                                       |
+| GET              | Read data from the endpoint path                          |
+| POST             | Write data to the endpoint path                           |
 
-CNS Dapr exposes the following endpoint methods:
+The basic hierarchy of endpoints in CNS Dapr is as follows:
 
-| Invoke Method                                  | Description                 |
-|------------------------------------------------|-----------------------------|
-| `<context>`                                    | All context and connections |
-| `<context>/<name>`                             | A context metadata field    |
-| `<context>/connections`                        | All connections             |
-| `<context>/connections/<id>`                   | A specific connection       |
-| `<context>/connections/<id>/<name>`            | A connection metadata field |
-| `<context>/connections/<id>/properties`        | All connection properties   |
-| `<context>/connections/<id>/properties/<name>` | A specific property value   |
-| `profiles/<name>`                              | A named profile definition  |
+```
+node                         A node in a CNS network, as the CNS service root
+↳ contexts                   A list of contexts within the scope of the node
+  ↳ <id>                     A specific context referenced by a unique ID
+    ↳ capabilities           A list of capabilities supported by the context
+      ↳ <name>               A specific capability defined by profile name
+        ↳ connections        A list of connections made for the capability
+          ↳ <id>             A specific connection referenced by a unique ID
+            ↳ properties     A list of properties supplied by the profile
+```
 
 After making a request, Dapr returns one of the following status codes:
 
 | Status   | Description                                                       |
 |----------|-------------------------------------------------------------------|
-| 200      | Request succeded                                                  |
-| 400      | Method name not given                                             |
-| 403      | Invocation forbidden by access control                            |
+| 200      | Request succeeded                                                 |
+| 400      | Endpoint not found                                                |
+| 403      | Invocation forbidden                                              |
 | 500      | Request failed                                                    |
 
 All HTTP requests/responses use JSON and the `application/json` mime type.
 
-A successful `GET` request will return:
+A successful request will return:
 
 `{"data": { ... }}`
 
-A successfull `POST`, `PUT` or `DELETE` request will return:
-
-`{"data": "ok"}`
-
 If CNS Dapr encounters an error, it will return:
 
-`{"error": "bad request"}`
+`{"error": "<text>"}`
 
 #### Examples
 
@@ -160,10 +144,10 @@ The following examples use `curl` in a terminal window:
 ---
 
 ```sh
-curl http://localhost:3500/v1.0/invoke/cns-dapr/method/<context>
+curl http://localhost:3500/v1.0/invoke/cns-dapr/method/node/contexts/<id>
 ```
 
-Requests full context metadata and connections and will output:
+Requests full context metadata, capabilities and connections and will output:
 
 `{"data": { ... }}`
 
@@ -172,89 +156,75 @@ with the full JSON description of the context (See: Context Schema).
 ---
 
 ```sh
-curl http://localhost:3500/v1.0/invoke/cns-dapr/method/<context>/comment
+curl http://localhost:3500/v1.0/invoke/cns-dapr/method/node/contexts/<id>/comment
 ```
 
 Requests a specific context metadata field and will output:
 
-`{"data": "Testing"}`
+`{"data": <value>}`
 
 with the current value of the specified field.
 
 ---
 
 ```sh
-curl http://localhost:3500/v1.0/invoke/cns-dapr/method/<context>/garbage
+curl http://localhost:3500/v1.0/invoke/cns-dapr/method/node/contexts/<id>/garbage
 ```
 
 Requests a field that does not exist and outputs:
 
-`{"error": "bad request"}`
+`{"error": "not found"}`
 
 since **garbage** is not a valid field name.
 
 ---
 
 ```sh
-curl http://localhost:3500/v1.0/invoke/cns-dapr/method/<context> \
+curl http://localhost:3500/v1.0/invoke/cns-dapr/method/node/contexts/<id> \
      -H "Content-Type: application/json" \
-     -d '{"comment": "Testing 1"}'
+     -d '{"comment": "Testing"}'
 ```
 
 Issues a post to the `comment` context metadata field and outputs:
 
-`{"data": "ok"}`
+`{"data": {"node": {"contexts": {"<context>": {"comment": "Testing"}}}}}`
 
-The field should now be set to the string `'Testing 1'`.\
-Multiple fields may be set using this method.
-
----
-
-```sh
-curl http://localhost:3500/v1.0/invoke/cns-dapr/method/<context>/comment \
-     -H "Content-Type: application/json" \
-     -d '"Testing 2"'
-```
-
-Issues a post to the `comment` field only and outputs:
-
-`{"data": "ok"}`
-
-The field should now be set to the string `'Testing 2'`.
+The field should now be set to the string `'Testing'`.\
+Multiple fields may be set at the same time using this method.
 
 ---
 
 ```sh
-curl http://localhost:3500/v1.0/invoke/cns-dapr/method/<context>/connections
+curl http://localhost:3500/v1.0/invoke/cns-dapr/method/node/contexts/<id>/capabilities/cp:test.abc.v1/connections
 ```
 
-Requests all the current connections of the context and outputs:
+Requests all the current connections of the `test.abc` capability and outputs:
 
 `{"data": { ... }}`
 
-with a map of connection objects (See: Context Schema).
+with a map of connection objects (See: Connection Schema).
 
 ---
 
 ```sh
-curl http://localhost:3500/v1.0/invoke/cns-dapr/method/<context>/connections/<id>/properties \
+curl http://localhost:3500/v1.0/invoke/cns-dapr/method/node/contexts/<id>/capabilities/cp:test.abc.v1/connections/<connid>/properties \
      -H "Content-Type: application/json" \
      -d '{"foo1": 1000, "foo2": 2000}'
 ```
 
-Issues a post to the specified `<id>` connection properties and outputs:
+Issues a post to the specified `<connid>` connection properties and outputs:
 
-`{"data": "ok"}`
+`{"data": { ... }}`
 
 The properties `foo1` and `foo2` will be set accordingly.
 
 ---
 
 ```sh
-curl http://localhost:3500/v1.0/invoke/cns-dapr/method/profiles/test.abc
+curl http://localhost:3500/v1.0/invoke/cns-dapr/method/profiles/cp:test.abc.v1
 ```
 
-Will request the descriptor for the profile `test.abc` and outputs:
+Will request the definition for the `test.abc` profile and outputs:
 
 `{"data": { ... }}`
 
@@ -266,9 +236,9 @@ with the full descriptor for the profile (See: Profile Schema).
 
 CNS Dapr publishes to the following topics:
 
-| Topic            | Description                                               |
-|------------------|-----------------------------------------------------------|
-| `<context>`      | All context metadata and connection changes               |
+| Topic                     | Description                                      |
+|---------------------------|--------------------------------------------------|
+| `node/contexts/<id>`      | All context metadata and connection changes      |
 
 Dapr will invoke the following endpoint of an application to discover topic subscriptions:
 
@@ -276,139 +246,183 @@ Dapr will invoke the following endpoint of an application to discover topic subs
 
 The application should return a JSON block containing the topics it wishes to subscribe to:
 
-```sh
+```json
 [
   {
     "pubsubname": "cns-pubsub",
-    "topic": "<context>",
-    "route": "/cns-pubsub--<context>--default"
+    "topic": "node/contexts/<id>",
+    "route": "/cns-pubsub--<id>--default"
   }
 ]
 ```
 
-To deliver topic messages, a HTTP `POST` will be made to the application at the route specified in the subscribe response. A HTTP 200 status response denotes successful processing of message.
+To deliver topic messages, a HTTP `POST` will be made to the application at the route specified in the subscribe response. A HTTP 200 status response denotes successful processing of the message.
 
 #### Examples
 
 
+### Node Schema
 
+Includes metadata and context information for a node.
 
+| Property         | Description                                               |
+|------------------|-----------------------------------------------------------|
+| version          | CNS Dapr version                                          |
+| broker           | CNS Broker in charge of the node                          |
+| status           | CNS Broker status information                             |
+| contexts         | Contexts of the node                                      |
+
+#### Example
+
+```json
+{
+  "data": {
+    "version": "1.1.0",
+    "broker": "padi",
+    "status": {
+      "started": "2024-05-31T11:17:09.553Z",
+      "reads": 36,
+      "writes": 1,
+      "updates": 0,
+      "errors": 2,
+      "connection": "online"
+    },
+    "contexts": {
+      "IcE3x5xwsyP64GoLEZfZ": { ... }
+    }
+  }
+}
+```
 
 ### Context Schema
 
-Includes metadata and connection information for a context.
+Includes metadata and capability information for a context.
 
 | Property         | Description                                               |
 |------------------|-----------------------------------------------------------|
 | name             | Name of the context                                       |
 | title            | Title of the context                                      |
 | comment          | Comment of the context                                    |
-| connections      | Connections of the context                                |
-
-The `connections` property is a map containing the definitions of each connection currently made to this context. The key for the map is a unique ID for the connection. If an existing connection is removed, it will be mapped to `null`. If no connections exist, this map will be empty.
-
-Each connection contains the following properties:
-
-| Property         | Description                                               |
-|------------------|-----------------------------------------------------------|
-| profile          | Name of the profile that made the connection              |
-| version          | Version of the profile (blank for latest)                 |
-| role             | Role of the connection (client or server)                 |
-| client           | Client name of the connection                             |
-| server           | Server name of the connection                             |
-| status           | Status of the connection                                  |
-| properties       | Properties of the connection                              |
-
-The `properties` property is a map containing a key / value pair for each property of the connection.
+| capabilities     | Capabilities of the context                               |
 
 #### Example
 
-```sh
+```json
 {
-  "name": "Example Server",
-  "title": "An example server",
-  "comment": "This is only an example",
-  "connections":
-    {
-      "wXStyS6Dvju5AMdz0mC6":
-        {
-          "profile": "test.abc",
-          "version": "",
-          "role": "server",
-          "client": "Example Client",
-          "server": "Example Server",
-          "status": "new",
-          "properties":
-            {
-              "foo1": 100,
-              "foo2": 200,
-              "far1": 101,
-              "far2": 201
-            }
-        }
-    },
-    ...
+  "data": {
+    "name": "Example Context",
+    "title": "An example context",
+    "comment": "This is only an example",
+    "capabilities": {
+      "cp:test.abc.v1": { ... }
+    }
+  }
 }
 ```
 
-### Profile Schema
+### Capability Schema
 
-Includes metadata and version information for a profile.
-
-| Property         | Description                                               |
-|------------------|-----------------------------------------------------------|
-| name             | Name of the profile                                       |
-| title            | Title of the profile                                      |
-| comment          | Comment of the profile                                    |
-| versions         | Versions of the profile                                   |
-
-The `versions` property is an array containing the definitions of each version of the profile, with version 1 as the first element, version 2 the second, and so on. If a connection does not specify a version, it is assumed it wants to use the 'latest' version. In this case, the last version in the list will be used.
-
-Each version contains an array of property definition objects:
+Includes profile and connection information for a capability.
 
 | Property         | Description                                               |
 |------------------|-----------------------------------------------------------|
-| name             | Name of the property                                      |
-| description      | Description of the property                               |
-| server           | Server side flag                                          |
-| propagate        | Propagate flag                                            |
-| required         | Required flag                                             |
+| scope            | Broker specific property                                  |
+| required         | Broker specific property                                  |
+| properties       | Connection property defaults                              |
+| connections      | Connections made by the broker                            |
 
 #### Example
 
-```sh
+```json
 {
-  "name": "test.abc",
-  "title": "Simple demo Connection Profile",
-  "comment": "Used to explain CNS/CP",
-  "versions": [
-    {
-      "properties": [
-        {
-          "name": "foo1",
-          "description": "Foo 1 property",
-          "propagate": null
-        },
-        {
-          "name": "foo2",
-          "description": "Foo 2 property",
-          "propagate": null
-        },
-        {
-          "name": "far1",
-          "description": "Far 1 property",
-          "server": null,
-          "propagate": null
-        },
-        {
-          "name": "far2",
-          "description": "Far 2 property"
-          "server": null,
-          "propagate": null
-        }
-      ]
+  "data": {
+    "scope": "children",
+    "required": false,
+    "properties": {
+      "far1": "321",
+      "far2": "123"
+    },
+    "connections": {
+      "ubcMmlEklEH45puTCpMa": { ... }
     }
-  ]
+  }
+}
+```
+
+### Connection Schema
+
+Includes metadata and properties for a connection
+
+| Property         | Description                                               |
+|------------------|-----------------------------------------------------------|
+| provider         | Provider name of the connection                           |
+| consumer         | Consumer name of the connection                           |
+| status           | Status of the connection                                  |
+| properties       | Properties of the connection                              |
+
+#### Example
+
+```json
+{
+  "data": {
+    "provider": "Server 1",
+    "consumer": "Client 1",
+    "status": "new",
+    "properties": {
+      "foo1": "666",
+      "foo2": "999"
+    }
+  }
+}
+```
+### Profile Schema
+
+Includes metadata and property information for a profile.
+
+| Property         | Description                                               |
+|------------------|-----------------------------------------------------------|
+| title            | Title of the profile                                      |
+| comment          | Comment of the profile                                    |
+| properties       | Properties of the profile                                 |
+
+The properties object contains an entry defining each property:
+
+| Property         | Description                                               |
+|------------------|-----------------------------------------------------------|
+| comment          | Comment of the property                                   |
+| required         | Required flag                                             |
+| propagate        | Propagate flag                                            |
+
+#### Example
+
+```json
+{
+  "data": {
+    "title": "Simple demo Connection Profile",
+    "comment": "Used to explain CNS/CP",
+    "properties": {
+      "foo1": {
+        "comment": "Foo 1 property",
+        "required": true,
+        "propagate": true
+      },
+      "foo2": {
+        "comment": "Foo 2 property",
+        "required": true,
+        "propagate": true
+      },
+      "far1": {
+        "comment": "Far 1 property",
+        "required": true,
+        "propagate": true
+      },
+      "far2": {
+        "comment": "Far 2 property",
+        "required": true,
+        "propagate": true
+      }
+    }
+  }
 }
 ```
 

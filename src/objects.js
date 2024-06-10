@@ -9,14 +9,7 @@ const UNDEFINED = '[object Undefined]';
 const OBJECT = '[object Object]';
 const ARRAY = '[object Array]';
 
-const DELETED = null;
-
 // Methods
-
-// Get object type
-function typeOf(obj) {
-  return Object.prototype.toString.call(obj);
-}
 
 // Check for undefined
 function isUndefined(obj) {
@@ -33,47 +26,21 @@ function isArray(obj) {
   return typeOf(obj) === ARRAY;
 }
 
-// Check for deleted
-function isDeleted(obj) {
-  return obj === DELETED;
-}
-
 // Check for empty object
 function isEmpty(obj) {
   return (Object.keys(obj).length === 0);
 }
 
-// Merge multiple objects
-function merge() {
-  const args = [].splice.call(arguments, 0);
-  const obj1 = {};
-
-  while (args.length > 0) {
-    const obj2 = args.splice(0, 1)[0];
-    if (!isObject(obj2)) continue;
-
-    for (const key in obj2) {
-      if (isObject(obj2[key]))
-        obj1[key] = merge(obj1[key] || {}, obj2[key]);
-      else obj1[key] = obj2[key];
-    }
-  }
-  return obj1;
-}
-
-// Perform deep copy
-function duplicate(obj) {
-  return merge(obj);//JSON.parse(JSON.stringify(obj));
-}
-
 // Locate keys in object
 function locate(keys, obj) {
+  // No keys?
   if (keys.length === 0)
     return null;
 
   var key;
 
   while (keys.length > 0) {
+    // Match next key in object?
     key = keys.shift();
 
     if (obj[key] === undefined)
@@ -89,10 +56,47 @@ function locate(keys, obj) {
   }
 }
 
+// Object contains keys?
+function contains(obj1, obj2) {
+  for (const key in obj2) {
+    // Each key must exist
+    if (obj1[key] === undefined ||
+      (isObject(obj2[key]) && !contains(obj1[key], obj2[key])))
+      return false;
+  }
+  return true;
+}
+
+// Perform deep copy
+function duplicate(obj) {
+  return merge(obj);//JSON.parse(JSON.stringify(obj));
+}
+
+// Merge multiple objects
+function merge() {
+  const args = [].splice.call(arguments, 0);
+  const obj1 = {};
+
+  // Combine each object
+  while (args.length > 0) {
+    // Get object
+    const obj2 = args.splice(0, 1)[0];
+    if (!isObject(obj2)) continue;
+
+    for (const key in obj2) {
+      // Merge child
+      if (isObject(obj2[key]))
+        obj1[key] = merge(obj1[key] || {}, obj2[key]);
+      else obj1[key] = obj2[key];
+    }
+  }
+  return obj1;
+}
+
 // Get object differences
 function difference(obj1, obj2) {
   // Must be objects
-  if (!isObject(obj2)) return DELETED;
+  if (!isObject(obj2)) return null;
   if (!isObject(obj1)) return obj2;
 
   // Scan for changes
@@ -118,7 +122,7 @@ function compare(prop1, prop2, key, changes) {
 
   // Item removed?
   if (type1 !== UNDEFINED && type2 === UNDEFINED) {
-    changes[key] = DELETED;
+    changes[key] = null;
     return;
   }
 
@@ -130,7 +134,7 @@ function compare(prop1, prop2, key, changes) {
 
   // Array type?
   if (type1 === ARRAY) {
-    // Arrays differ?
+    // Arrays changed?
     if (!includes(prop1, prop2))
       changes[key] = prop2;
     return;
@@ -138,14 +142,11 @@ function compare(prop1, prop2, key, changes) {
 
   // Object type?
   if (type1 === OBJECT) {
-    // Objects differ?
-//    if (prop1 !== prop2 ) {
-      // Get object changes
-      const dif = difference(prop1, prop2);
+    // Get object changes
+    const diff = difference(prop1, prop2);
 
-      if (Object.keys(dif).length > 0)
-        changes[key] = dif;
-//    }
+    if (!isEmpty(diff))
+      changes[key] = diff;
     return;
   }
 
@@ -162,27 +163,26 @@ function includes(arr1, arr2) {
     return false;
 
   for(var n = 0; n < len; n++) {
-    if (arr2[n] !== arr1[n])//(!arr2.includes(arr1[n]))
+    if (arr2[n] !== arr1[n])
       return false;
   }
   return true;
 }
 
+// Get object type
+function typeOf(obj) {
+  return Object.prototype.toString.call(obj);
+}
+
 // Exports
-
-exports.UNDEFINED = UNDEFINED;
-exports.OBJECT = OBJECT;
-exports.ARRAY = ARRAY;
-
-exports.typeOf = typeOf;
 
 exports.isUndefined = isUndefined;
 exports.isObject = isObject;
 exports.isArray = isArray;
-exports.isDeleted = isDeleted;
 exports.isEmpty = isEmpty;
 
-exports.merge = merge;
-exports.duplicate = duplicate;
 exports.locate = locate;
+exports.contains = contains;
+exports.duplicate = duplicate;
+exports.merge = merge;
 exports.difference = difference;
