@@ -9,4 +9,5 @@ COPY package.json package-lock.json /app/
 RUN npm install
 COPY . /app
 
-CMD ["npm", "run", "start"]
+# Run in "production" mode
+CMD ["npm", "run", "node"]
