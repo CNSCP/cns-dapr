@@ -1,31 +1,9 @@
-# CNS Dapr
-#
-# The following YAML is configured to build this cns-dapr image and push
-# it into GCP Artifact Hub.
-#
-# docker pull us-centra1-docker.pkg.dev/padi-staging/public/cns-dapr:latest
-#
 ---
 steps:
-  # `docker build -t gcr.io/GCR_PROJ/APP_NAME:TAG .`
-  - name: "gcr.io/cloud-builders/docker"
-    args: [
-      "build",
-      "-t", "${_GCR_IMAGE}:${_TAG}", "."
-    ]
-
-  # Tag new docker image with SHA
-  - name: "gcr.io/cloud-builders/docker"
-    args: [
-      "tag", "${_GCR_IMAGE}:${_TAG}", "${_GCR_IMAGE}:$SHORT_SHA"
-    ]
-
-  # Push built images to GCR
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "${_GCR_IMAGE}:${_TAG}"]
-
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "${_GCR_IMAGE}:$SHORT_SHA"]
+  - name: 'docker'
+    args: ['buildx', 'create', '--driver', 'docker-container', '--name', 'container', '--use']
+  - name: 'docker'
+    args: ['buildx', 'build', '--platform', 'linux/amd64,linux/arm64', '-t', "${_GCR_IMAGE}:${_TAG}", '--push', '.']
 
 options:
   dynamic_substitutions: true
