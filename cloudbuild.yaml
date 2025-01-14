@@ -7,25 +7,27 @@
 #
 ---
 steps:
-  # `docker build -t gcr.io/GCR_PROJ/APP_NAME:TAG .`
-  - name: "gcr.io/cloud-builders/docker"
-    args: [
-      "build",
-      "-t", "${_GCR_IMAGE}:${_TAG}", "."
-    ]
+  - name: 'docker'
+    args: ['buildx', 'create', '--driver', 'docker-container', '--name', 'container', '--use']
+  - name: 'docker'
+    args: ['buildx', 'build', '--platform', 'linux/amd64,linux/arm64', '-t', "${_GCR_IMAGE}:${_TAG}", '--push', '.']
+    # args: [
+    #   "build",
+    #   "-t", "${_GCR_IMAGE}:${_TAG}", "."
+    # ]
 
   # Tag new docker image with SHA
-  - name: "gcr.io/cloud-builders/docker"
-    args: [
-      "tag", "${_GCR_IMAGE}:${_TAG}", "${_GCR_IMAGE}:$SHORT_SHA"
-    ]
+  # - name: "gcr.io/cloud-builders/docker"
+  #   args: [
+  #     "tag", "${_GCR_IMAGE}:${_TAG}", "${_GCR_IMAGE}:$SHORT_SHA"
+  #   ]
 
   # Push built images to GCR
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "${_GCR_IMAGE}:${_TAG}"]
+  # - name: "gcr.io/cloud-builders/docker"
+  #   args: ["push", "${_GCR_IMAGE}:${_TAG}"]
 
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "${_GCR_IMAGE}:$SHORT_SHA"]
+  # - name: "gcr.io/cloud-builders/docker"
+  #   args: ["push", "${_GCR_IMAGE}:$SHORT_SHA"]
 
 options:
   dynamic_substitutions: true
