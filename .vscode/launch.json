@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "command": "npm run start:dapr",
+      "command": "npm run dev",
       "name": "NPM Start (Local)",
       "request": "launch",
       "type": "node-terminal",

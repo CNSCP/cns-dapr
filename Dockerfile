@@ -10,4 +10,4 @@ RUN npm install
 COPY . /app
 
 # Run in "production" mode
-CMD ["npm", "run", "node"]
+CMD ["npm", "run", "start"]
