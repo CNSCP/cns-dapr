@@ -139,7 +139,14 @@ async function deleteNode(data, prev, cache) {
 async function subscribeNode(callback) {
   // Connect client
   const client = mqtt.connect(config.CNS_PADI_MQTT, {
-    username: token
+    username: token,
+    will: {
+      topic: `thing/${context}`,
+      // PadiStatus: 2 --> Red Dot, Offline
+      payload: JSON.stringify({
+        padiStatus: 2
+      }),
+    }
   })
   // Client connect
   .on('connect', (connack) => {
@@ -178,6 +185,8 @@ async function subscribeNode(callback) {
   // Subscribe to thing
   console.log('MQTT SUB Padi thing', context);
   client.subscribe('thing/' + context);
+  // Publish Broker is Online. Status 0 == Green Dot
+  client.publish(`thing/${context}`, '{"padiStatus":0}')
 }
 
 // Convert to profile
